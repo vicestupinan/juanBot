@@ -13,11 +13,10 @@ SUBREDDITS = [
     "memesESP",      
     "SpanishMemes",
     "memesenespanol", 
-    "latinoamerica",  
     "memeslatinos"    
 ]
 
-def get_random_meme_url():
+def get_random_meme():
     reddit = praw.Reddit(
         client_id=REDDIT_CLIENT_ID,
         client_secret=REDDIT_SECRET,
@@ -28,7 +27,12 @@ def get_random_meme_url():
     subreddit = reddit.subreddit(subreddit_name)
     posts = [post for post in subreddit.hot(limit=20) if not post.stickied and not post.over_18]
     meme = random.choice(posts)
-    return meme.url
+    return {
+        "title": meme.title,
+        "url": meme.url,
+        "author": meme.author.name,
+        "permalink": f"https://reddit.com{meme.permalink}"
+    }
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -41,9 +45,17 @@ async def on_message(message):
 
     if message.content.startswith(":meme"):
         try:
-            meme_url = await asyncio.to_thread(get_random_meme_url)
-            await message.channel.send(meme_url)
-        except Exception:
+            meme_data = await asyncio.to_thread(get_random_meme)
+            embed = discord.Embed(
+                title=meme_data["title"],
+                url=meme_data["permalink"]
+            )
+            embed.set_image(url=meme_data["url"])
+            embed.set_footer(text=f"Publicado por u/{meme_data['author']}")
+
+            await message.channel.send(embed=embed)
+        except Exception as e:
             await message.channel.send("❌ Error al obtener el meme.")
+            print(f"Error: {e}")
 
 client.run(DISCORD_TOKEN)
