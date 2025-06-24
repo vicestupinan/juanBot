@@ -2,6 +2,7 @@ import discord
 import praw
 import random
 import asyncio
+import os
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
