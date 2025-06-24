@@ -27,11 +27,14 @@ def get_random_meme():
     subreddit = reddit.subreddit(subreddit_name)
     posts = [post for post in subreddit.hot(limit=20) if not post.stickied and not post.over_18]
     meme = random.choice(posts)
+    url = meme.url
+    is_image = url.endswith((".jpg", ".png", ".gif", ".webp", ".jpeg", ".gifv"))
     return {
         "title": meme.title,
-        "url": meme.url,
+        "url": url,
         "author": meme.author.name,
-        "permalink": f"https://reddit.com{meme.permalink}"
+        "permalink": f"https://reddit.com{meme.permalink}",
+        "is_image": is_image
     }
 
 intents = discord.Intents.default()
@@ -46,16 +49,20 @@ async def on_message(message):
     if message.content.startswith(":meme"):
         try:
             meme_data = await asyncio.to_thread(get_random_meme)
-            embed = discord.Embed(
-                title=meme_data["title"],
-                url=meme_data["permalink"]
-            )
-            embed.set_image(url=meme_data["url"])
-            embed.set_footer(text=f"Publicado por u/{meme_data['author']}")
 
-            await message.channel.send(embed=embed)
-        except Exception as e:
+            if meme_data["is_image"]:
+                embed = discord.Embed(
+                    title=meme_data["title"],
+                    url=meme_data["permalink"]
+                )
+                embed.set_image(url=meme_data["url"])
+                embed.set_footer(text=f"Publicado por u/{meme_data['author']}")
+                await message.channel.send(embed=embed)
+            else:
+                await message.channel.send(
+                    f"**{meme_data['title']}**\n {meme_data['url']} \n Publicado por u/{meme_data['author']}"
+                )
+        except Exception:
             await message.channel.send("❌ Error al obtener el meme.")
-            print(f"Error: {e}")
 
 client.run(DISCORD_TOKEN)
